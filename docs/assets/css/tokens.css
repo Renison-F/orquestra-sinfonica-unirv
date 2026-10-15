@@ -1,0 +1,145 @@
+/* DESIGN SYSTEM · Orquestra Sinfônica UniRV
+   Edite apenas os tokens para alterar a identidade visual global. */
+:root {
+  --ocg-navy-950:#0b1527;
+  --ocg-navy-900:#11233d;
+  --ocg-navy-800:#1b3150;
+  --ocg-navy-700:#294766;
+  --ocg-gold-700:#9b753e;
+  --ocg-gold-600:#b38b52;
+  --ocg-gold-400:#ddbd84;
+  --ocg-gold-100:#f8f1e6;
+  --ocg-ink:#1c2c43;
+  --ocg-muted:#78879a;
+  --ocg-soft:#f5f7fb;
+  --ocg-surface:#ffffff;
+  --ocg-stroke:#e6eaf0;
+  --ocg-success:#188369;
+  --ocg-success-soft:#e6f6f0;
+  --ocg-danger:#c64d59;
+  --ocg-danger-soft:#fdeef0;
+  --ocg-warning:#bd852e;
+  --ocg-warning-soft:#fff5e5;
+  --ocg-info:#386a95;
+  --ocg-info-soft:#eaf2fb;
+  --ocg-radius-sm:10px;
+  --ocg-radius-md:16px;
+  --ocg-radius-lg:22px;
+  --ocg-shadow:0 13px 35px rgba(18,38,65,.055);
+  --ocg-font-sans:Inter,"Segoe UI",Arial,sans-serif;
+  --ocg-font-display:Georgia,"Times New Roman",serif;
+  --ocg-sidebar-width:264px;
+  --bs-primary:var(--ocg-navy-900);
+  --bs-primary-rgb:17,35,61;
+  --bs-border-color:var(--ocg-stroke);
+  --bs-body-color:var(--ocg-ink);
+  --bs-body-bg:var(--ocg-soft);
+  --bs-body-font-family:var(--ocg-font-sans);
+  --bs-border-radius:var(--ocg-radius-sm);
+  --bs-focus-ring-color:rgba(179,139,82,.22);
+
+  /* Tokens complementares: superfícies, estados, overlays e componentes */
+  --ocg-white:#fff;
+  --ocg-surface-tint:#fafbfd;
+  --ocg-line-faint:#eff1f4;
+  --ocg-meter-track:#edf0f4;
+  --ocg-sidebar-overline:#7f93ad;
+  --ocg-sidebar-link:#b5c3d3;
+  --ocg-sidebar-meta:#9eaec2;
+  --ocg-sidebar-quote:#e5edf8;
+  --ocg-breadcrumb-separator:#b9c0cb;
+  --ocg-save-label:#668177;
+  --ocg-save-indicator:#26a478;
+  --ocg-save-indicator-glow:#e6f7ee;
+  --ocg-button-hover:#f7f9fb;
+  --ocg-button-hover-line:#cdd4dc;
+  --ocg-danger-soft-line:#fad6d9;
+  --ocg-danger-hover-bg:#fbd9de;
+  --ocg-danger-hover-fg:#aa2935;
+  --ocg-hero-start:#11233d;
+  --ocg-hero-mid:#1b3552;
+  --ocg-hero-end:#27405c;
+  --ocg-hero-copy:#c4d1de;
+  --ocg-hero-chip:#dce5ec;
+  --ocg-stat-label:#68788c;
+  --ocg-stat-watermark:#f4f6f9;
+  --ocg-pill-label:#8a96a8;
+  --ocg-divider-faint:#f1f3f6;
+  --ocg-chart-label:#748298;
+  --ocg-table-head-bg:#fbfcfe;
+  --ocg-table-head-fg:#8291a3;
+  --ocg-avatar-bg:#e9edf4;
+  --ocg-avatar-inactive-bg:#f2f2f2;
+  --ocg-avatar-inactive-fg:#98a0ac;
+  --ocg-person-caption:#99a3b1;
+  --ocg-search-icon:#92a0b1;
+  --ocg-filter-text:#69788b;
+  --ocg-date-sub:#95a0ae;
+  --ocg-frequency-badge-bg:#f3f6f9;
+  --ocg-table-info:#8592a4;
+  --ocg-pagination-fg:#738198;
+  --ocg-report-border:#e6e7e5;
+  --ocg-report-start:#fffdf9;
+  --ocg-footer-copy:#9aa5b2;
+  --ocg-form-label:#4b5f76;
+  --ocg-form-input-border:#dfe5eb;
+  --ocg-mobile-divider:#ffffff25;
+  --ocg-sidebar-line:rgba(255,255,255,.11);
+  --ocg-brand-halo:rgba(179,139,82,.08);
+  --ocg-nav-hover:rgba(255,255,255,.085);
+  --ocg-sidebar-bottom-line:rgba(255,255,255,.12);
+  --ocg-music-staff:rgba(221,189,132,.33);
+  --ocg-hero-chip-line:rgba(240,246,255,.14);
+  --ocg-hero-chip-bg:rgba(255,255,255,.035);
+  --ocg-hero-orbit-light:rgba(221,189,132,.18);
+  --ocg-hero-orbit-strong:rgba(221,189,132,.35);
+  --ocg-hero-note:rgba(221,189,132,.55);
+  --ocg-hero-staff:rgba(221,189,132,.32);
+  --ocg-modal-shadow:rgba(12,27,48,.22);
+  /* Modal de chamada: dimensões responsivas e rolagem interna */
+  --ocg-rehearsal-modal-width:780px;
+  --ocg-rehearsal-modal-max-height:820px;
+  --ocg-modal-scroll-track:#f0f3f8;
+  --ocg-modal-scroll-thumb:#b1bdcc;
+  --ocg-modal-scroll-thumb-hover:#8799ad;
+  --ocg-input-focus-shadow:rgba(179,139,82,.13);
+  /* Gráficos desenhados em canvas */
+  --ocg-chart-grid:#edf1f4;
+  --ocg-chart-empty:#8d9aaa;
+  --ocg-chart-tick:#9ca8b5;
+  --ocg-chart-track:#eef2f6;
+  --ocg-chart-ink:#243d57;
+  --ocg-chart-date:#8997a7;
+}
+
+
+/* STUDIO: barra, painel lateral e canvas — altere estes valores para personalizar. */
+:root {
+  --studio-hub-height: 60px;
+  --studio-panel-width: 244px;
+  --studio-hub-bg: #20252a;
+  --studio-panel-bg: #33393f;
+  --studio-panel-dark: #2a3035;
+  --studio-panel-rule: #4b5359;
+  --studio-panel-text: #dbe1e6;
+  --studio-panel-muted: #9ca9b2;
+  --studio-canvas: #edf0f2;
+  --studio-paper: #ffffff;
+  --studio-ink: #263340;
+  --studio-title: #1d2b38;
+  --studio-subtle: #677683;
+  --studio-line: #dfe5e9;
+  --studio-line-soft: #edf0f2;
+  --studio-hover: #f6f8fa;
+  --studio-accent: #ac834b;
+  --studio-accent-light: #f9f0e3;
+  --studio-accent-strong: #d9b77f;
+  --studio-success: #148064;
+  --studio-success-bg: #eaf7f0;
+  --studio-danger: #bc4959;
+  --studio-danger-bg: #fcf0f2;
+  --studio-radius: 8px;
+  --studio-shadow: 0 4px 18px rgb(25 43 58 / 3.5%);
+  --bs-body-bg: var(--studio-canvas);
+  --bs-body-color: var(--studio-ink);
+}

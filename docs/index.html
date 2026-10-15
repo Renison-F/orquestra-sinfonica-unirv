@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#232a31">
+  <meta name="description" content="Dashboard público de frequência de ensaios do naipe da Orquestra Sinfônica da Universidade de Rio Verde (UniRV).">
+  <title>Painel de frequência · Orquestra Sinfônica UniRV</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/public.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+  <script src="assets/js/config.js" defer></script><script src="assets/js/client.js" defer></script>
+  <script src="assets/js/public.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+<header class="public-topbar">
+  <div class="public-brand"><span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-music"></i></span><span><strong>ORQUESTRA SINFÔNICA</strong><small>UNIVERSIDADE DE RIO VERDE · UniRV</small></span></div>
+  <nav aria-label="Navegação principal" class="top-links"><a href="#indicadores" class="top-item active">Indicadores</a><a href="#musicos" class="top-item">Músicos</a><a href="#criterios" class="top-item">Critérios</a></nav>
+  <a href="entrar.html" class="top-login"><i class="fa-solid fa-lock" aria-hidden="true"></i> <span>Entrar</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+</header>
+<main id="conteudo" class="public-shell">
+  <section class="hero-block" aria-labelledby="heroTitle">
+    <div class="hero-copy"><span class="eyebrow"><span class="live-dot" aria-hidden="true"></span> PAINEL INSTITUCIONAL · FREQUÊNCIA</span><h1 id="heroTitle">Acompanhamento de <em>frequência</em> do naipe</h1><p>Uma visão clara e transparente da participação dos músicos nos ensaios. Indicadores individuais e coletivos, atualizados conforme os registros oficiais.</p>
+    <div class="hero-meta"><span><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> <strong id="lastDate">Nenhum ensaio publicado</strong></span><span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> <span id="lastPlace">—</span></span></div>
+    </div><div class="hero-visual" aria-hidden="true"><div class="hero-big-ring"><i class="fa-solid fa-music"></i></div><div class="hero-orbit hero-orbit-one"></div><div class="hero-orbit hero-orbit-two"></div><span class="hero-display-label">DISCIPLINA · PARTICIPAÇÃO · MÚSICA</span></div>
+  </section>
+  <div id="appAlert" class="notification" role="status" aria-live="polite"><i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Carregando indicadores públicos...</div>
+  <section id="indicadores" class="stat-section" aria-labelledby="indicadoresTitle"><div class="section-head"><div><span class="section-label">VISÃO GERAL</span><h2 id="indicadoresTitle">Indicadores do naipe</h2><p>Presenças completas e parciais são ponderadas no cálculo.</p></div><span class="subtle-chip"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Acumulado</span></div>
+    <div class="stat-grid">
+      <article class="public-stat"><div class="stat-label">FREQUÊNCIA MÉDIA <span class="stat-symbol green"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span></div><div class="stat-figure" id="statFrequency">—</div><div class="stat-foot" id="statFrequencyDetail">Sem registros concluídos</div></article>
+      <article class="public-stat"><div class="stat-label">INTEGRANTES ATIVOS <span class="stat-symbol blue"><i class="fa-solid fa-users" aria-hidden="true"></i></span></div><div class="stat-figure" id="statMembers">—</div><div class="stat-foot">Músicos do naipe</div></article>
+      <article class="public-stat"><div class="stat-label">ENSAIOS REGISTRADOS <span class="stat-symbol gold"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></span></div><div class="stat-figure" id="statRehearsals">—</div><div class="stat-foot">Histórico acumulado</div></article>
+      <article class="public-stat"><div class="stat-label">PRESENÇAS PARCIAIS <span class="stat-symbol violet"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></span></div><div class="stat-figure" id="statPartial">—</div><div class="stat-foot">Cada uma equivale a 50%</div></article>
+    </div>
+  </section>
+  <section class="overview-grid" aria-label="Resumo dos registros">
+    <article class="panel-card public-donut"><div class="panel-heading"><div><span class="section-label">DISTRIBUIÇÃO</span><h2>Participação por situação</h2></div><span class="subtle-chip">Registros concluídos</span></div><div class="donut-layout"><div class="donut-container"><canvas id="publicDistribution" width="220" height="220" role="img" aria-label="Distribuição da presença"></canvas><div class="donut-center"><strong id="donutRate">—</strong><span>frequência</span></div></div><div class="public-legend"><div><i class="color-dot present"></i><span>Presenças integrais</span><strong id="countPresent">—</strong></div><div><i class="color-dot partial"></i><span>Presenças parciais</span><strong id="countPartial">—</strong></div><div><i class="color-dot justified"></i><span>Faltas justificadas</span><strong id="countJustified">—</strong></div><div><i class="color-dot absent"></i><span>Faltas não justificadas</span><strong id="countAbsent">—</strong></div><div class="legend-total"><span>Total computado</span><strong id="countRecorded">—</strong></div></div></div></article>
+    <article id="criterios" class="panel-card rules-panel"><div class="panel-heading"><div><span class="section-label">METODOLOGIA</span><h2>Como calculamos a frequência?</h2></div><span class="rule-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span></div><p>O percentual considera apenas chamadas concluídas, de maneira uniforme para todos os músicos.</p><div class="rule-stack"><div><span class="rule-mark mark-present"><i class="fa-solid fa-check" aria-hidden="true"></i></span><span><strong>Presença integral</strong><small>Crédito de 100% pela participação no ensaio.</small></span><b>1,0</b></div><div><span class="rule-mark mark-partial"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></span><span><strong>Presença parcial</strong><small>Comparecimento a metade do ensaio. Conta 50%.</small></span><b>0,5</b></div><div><span class="rule-mark mark-absent"><i class="fa-solid fa-xmark" aria-hidden="true"></i></span><span><strong>Falta integral</strong><small>Justificada ou não, conta como ausência.</small></span><b>0,0</b></div><div><span class="rule-mark mark-pending"><i class="fa-regular fa-clock" aria-hidden="true"></i></span><span><strong>Chamada pendente</strong><small>Não entra no cálculo até ser registrada.</small></span><b>—</b></div></div></article>
+  </section>
+  <section id="musicos" class="musicians-section" aria-labelledby="musicosTitle"><div class="section-head"><div><span class="section-label">DESEMPENHO INDIVIDUAL</span><h2 id="musicosTitle">Frequência por músico</h2><p>Percentual acumulado de cada integrante nos ensaios registrados.</p></div><span class="subtle-chip"><i class="fa-solid fa-users" aria-hidden="true"></i> <span id="memberCounter">— músicos</span></span></div><div id="musicianGrid" class="musician-grid"><p class="empty-message">Aguardando dados...</p></div></section>
+  <footer class="public-footer"><span>© 2026 · Orquestra Sinfônica da Universidade de Rio Verde — UniRV</span><span><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Dados de justificativas e observações restritos à administração.</span></footer>
+</main>
+</body></html>

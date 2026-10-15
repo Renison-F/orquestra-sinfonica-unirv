@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#22282d">
+  <meta name="description" content="Painel do naipe da Orquestra Sinfônica da Universidade de Rio Verde: ensaios, frequência e relatórios.">
+  <title>Administração de frequência · Orquestra Sinfônica UniRV</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdn.datatables.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="assets/css/tokens.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/studio-layout.css">
+  <link rel="stylesheet" href="assets/css/admin-auth.css">
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script>
+  <script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js" defer></script>
+  <script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+  <script src="assets/js/config.js" defer></script>
+  <script src="assets/js/client.js" defer></script>
+  <script src="assets/js/state-actions.js" defer></script>
+  <script src="assets/js/app.js" defer></script>
+  <script src="assets/js/admin-auth.js" defer></script>
+</head>
+<body>
+  <div id="sessionGate" class="session-gate" role="status" aria-live="polite"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>Verificando autorização de acesso...</span></div>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <div class="studio-frame">
+    <header class="studio-hub" aria-label="Barra principal do sistema">
+      <div class="hub-brand">
+        <span class="hub-symbol" aria-hidden="true"><i class="fa-solid fa-music"></i></span>
+        <span class="hub-brand-text"><strong>ORQUESTRA SINFÔNICA</strong><small>UNIVERSIDADE DE RIO VERDE <span aria-hidden="true">·</span> UniRV</small></span>
+      </div>
+      <span class="hub-divider d-none d-xl-block" aria-hidden="true"></span>
+      <span class="hub-context d-none d-xl-inline">Gestão de naipe <i class="fa-solid fa-chevron-right" aria-hidden="true"></i> <strong>Frequência</strong></span>
+      <nav class="hub-navigation d-none d-xxl-flex" aria-label="Acesso rápido">
+        <a class="hub-nav-link is-current" href="#visao-geral" data-nav-target="visao-geral">Visão geral</a>
+        <a class="hub-nav-link" href="#integrantes" data-nav-target="integrantes">Integrantes</a>
+        <a class="hub-nav-link" href="#ensaios" data-nav-target="ensaios">Ensaios</a>
+      </nav>
+      <div class="hub-spacer"></div>
+      <span class="save-indicator hub-status" id="saveIndicator" role="status"><span class="save-dot"></span> Dados protegidos no Supabase</span>
+      <button type="button" class="hub-control d-none d-lg-inline-flex" id="toggleSidebarButton" aria-label="Recolher painel lateral" aria-expanded="true" aria-controls="studioSidebar" title="Mostrar ou ocultar painel lateral"><i class="fa-solid fa-table-columns" aria-hidden="true"></i></button>
+      <a class="hub-control admin-home" href="index.html" title="Ver painel público" aria-label="Ir ao painel público"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+      <button type="button" class="hub-control" id="refreshButton" title="Atualizar dados" aria-label="Atualizar dados"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></button>
+      <button type="button" class="hub-control d-inline-flex d-lg-none" aria-label="Abrir navegação" data-bs-toggle="offcanvas" data-bs-target="#menuMobile" aria-controls="menuMobile"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+      <button type="button" class="hub-control admin-logout" id="logoutButton" title="Sair do sistema" aria-label="Encerrar sessão"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></button>
+      <button type="button" class="btn btn-ui btn-primary-ui hub-new" id="newRehearsalButton"><i class="fa-solid fa-plus" aria-hidden="true"></i><span class="d-none d-sm-inline">Novo ensaio</span><span class="d-inline d-sm-none">Ensaio</span></button>
+    </header>
+
+    <div class="studio-shell">
+      <aside class="studio-sidebar d-none d-lg-flex" id="studioSidebar" aria-label="Navegação do painel">
+        <div class="sidebar-head">
+          <div class="sidebar-head-copy"><span class="sidebar-head-kicker">WORKSPACE</span><strong>Controle musical</strong></div>
+        </div>
+        <div class="sidebar-scroll">
+          <p class="nav-overline">PAINEL</p>
+          <nav class="sidebar-navigation" aria-label="Seções do controle de frequência">
+            <a class="side-link is-current" href="#visao-geral" data-nav-target="visao-geral"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i><span>Visão geral</span></a>
+            <a class="side-link" href="#integrantes" data-nav-target="integrantes"><i class="fa-solid fa-users" aria-hidden="true"></i><span>Integrantes</span></a>
+            <a class="side-link" href="#ensaios" data-nav-target="ensaios"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i><span>Histórico de ensaios</span></a>
+            <a class="side-link" href="#relatorios" data-nav-target="relatorios"><i class="fa-solid fa-file-lines" aria-hidden="true"></i><span>Relatórios</span></a>
+          </nav>
+          <p class="nav-overline sidebar-tools-title">ATALHOS</p>
+          <div class="sidebar-shortcuts">
+            <button type="button" id="sidebarNewRehearsal" class="sidebar-shortcut"><i class="fa-solid fa-plus" aria-hidden="true"></i><span>Registrar ensaio</span></button>
+            <button type="button" id="sidebarManageMembers" class="sidebar-shortcut"><i class="fa-solid fa-user-gear" aria-hidden="true"></i><span>Gerenciar músicos</span></button>
+          </div>
+          <div class="sidebar-note"><i class="fa-regular fa-circle-check" aria-hidden="true"></i><span>Lançamentos protegidos no Supabase com exportação de JSON e Markdown.</span></div>
+        </div>
+        <footer class="sidebar-footer"><span class="sidebar-footer-emblem" aria-hidden="true"><i class="fa-solid fa-music"></i></span><span><strong>Orquestra Sinfônica</strong><small>Universidade de Rio Verde</small></span><span class="sidebar-footer-dot" aria-hidden="true"></span></footer>
+      </aside>
+
+      <main id="conteudo" class="studio-workspace">
+        <div class="studio-main-width">
+          <div class="workspace-header" id="visao-geral">
+            <div class="workspace-heading">
+              <nav aria-label="Localização" class="workspace-breadcrumb"><span>Gestão musical</span><i class="fa-solid fa-chevron-right" aria-hidden="true"></i><span>Naipe</span><i class="fa-solid fa-chevron-right" aria-hidden="true"></i><strong>Frequência</strong></nav>
+              <h1>Controle de frequência <span class="title-accent" aria-hidden="true">/</span></h1>
+              <p>Presenças, ausências e compromissos do naipe em um único lugar.</p>
+            </div>
+            <div class="workspace-header-actions">
+              <span class="workspace-update" id="updatedAt">Dados atualizados —</span>
+              <button type="button" class="btn btn-ui btn-outline-ui" id="manageMembersButton"><i class="fa-solid fa-user-gear" aria-hidden="true"></i> Gerenciar integrantes</button>
+            </div>
+          </div>
+
+          <section class="session-strip" aria-labelledby="heroTitle">
+            <div class="session-strip-art" aria-hidden="true"><i class="fa-solid fa-music"></i></div>
+            <div class="session-strip-main"><span class="section-kicker">ÚLTIMO REGISTRO</span><h2 id="heroTitle">A frequência em cada compasso.</h2><p>Acompanhe o engajamento musical e o histórico dos ensaios.</p></div>
+            <div class="session-strip-info"><span><i class="fa-regular fa-calendar" aria-hidden="true"></i><span id="heroLastDate">—</span></span><span><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span id="heroLastPlace">Nenhum ensaio</span></span></div>
+          </section>
+
+          <section class="section-block metrics-section" aria-labelledby="numbersHeading">
+            <div class="section-heading section-heading-tight"><div><span class="section-kicker">VISÃO CONSOLIDADA</span><h2 id="numbersHeading">Indicadores do naipe</h2></div><span class="section-meta">Base: chamadas com situação definida</span></div>
+            <div class="row g-3">
+              <div class="col-6 col-xl-3"><article class="stat-card stat-members"><div class="stat-top"><span>Integrantes ativos</span><span class="stat-icon stat-icon-gold"><i class="fa-solid fa-users" aria-hidden="true"></i></span></div><strong class="stat-value" id="kpiMembers">4</strong><span class="stat-sub">Músicos no quadro atual</span><span class="stat-watermark" aria-hidden="true"><i class="fa-solid fa-users"></i></span></article></div>
+              <div class="col-6 col-xl-3"><article class="stat-card stat-rehearsals"><div class="stat-top"><span>Ensaios registrados</span><span class="stat-icon stat-icon-blue"><i class="fa-regular fa-calendar-check" aria-hidden="true"></i></span></div><strong class="stat-value" id="kpiRehearsals">1</strong><span class="stat-sub">No histórico da orquestra</span><span class="stat-watermark" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span></article></div>
+              <div class="col-6 col-xl-3"><article class="stat-card stat-presence"><div class="stat-top"><span>Taxa de presença</span><span class="stat-icon stat-icon-green"><i class="fa-solid fa-user-check" aria-hidden="true"></i></span></div><strong class="stat-value" id="kpiPresence">50%</strong><span class="stat-sub" id="kpiPresenceDetail">2 presenças registradas</span><span class="stat-watermark" aria-hidden="true"><i class="fa-solid fa-check"></i></span></article></div>
+              <div class="col-6 col-xl-3"><article class="stat-card stat-absence"><div class="stat-top"><span>Taxa de faltas</span><span class="stat-icon stat-icon-red"><i class="fa-solid fa-user-xmark" aria-hidden="true"></i></span></div><strong class="stat-value" id="kpiAbsence">50%</strong><span class="stat-sub" id="kpiAbsenceDetail">2 faltas, 1 justificada</span><span class="stat-watermark" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></span></article></div>
+            </div>
+          </section>
+
+          <section class="section-block analytics-section" aria-label="Análises de frequência">
+            <div class="row g-3">
+              <div class="col-12 col-xl-5"><article class="surface-card chart-card"><div class="card-heading"><div><span class="section-kicker">COMPOSIÇÃO</span><h3>Distribuição de frequência</h3><p>Classificação de todas as chamadas</p></div><span class="outline-pill">Acumulado</span></div><div class="chart-body distribution-body"><div class="ring-wrap"><canvas id="distributionCanvas" width="210" height="210" role="img" aria-label="Distribuição de presença e faltas"></canvas><div class="ring-legend-center"><strong id="donutPercent">50%</strong><span>de presença</span></div></div><div class="chart-legend"><div><span class="legend-label"><i class="legend-dot is-present" aria-hidden="true"></i> Presenças</span><strong id="legendPresent">2</strong></div><div><span class="legend-label"><i class="legend-dot is-partial" aria-hidden="true"></i> Presenças parciais (50%)</span><strong id="legendPartial">0</strong></div><div><span class="legend-label"><i class="legend-dot is-justified" aria-hidden="true"></i> Faltas justificadas</span><strong id="legendJustified">1</strong></div><div><span class="legend-label"><i class="legend-dot is-absent" aria-hidden="true"></i> Faltas não justificadas</span><strong id="legendAbsent">1</strong></div><div class="legend-foot"><span>Chamadas concluídas</span><strong id="legendTotal">4</strong></div></div></div></article></div>
+              <div class="col-12 col-xl-7"><article class="surface-card chart-card"><div class="card-heading"><div><span class="section-kicker">DESEMPENHO AO LONGO DO TEMPO</span><h3>Evolução por ensaio</h3><p>Presenças integrais e parciais ponderadas nos últimos oito ensaios</p></div><span class="outline-pill"><i class="fa-solid fa-chart-column" aria-hidden="true"></i> Últimos 8</span></div><div class="chart-body trend-body"><canvas id="trendCanvas" width="620" height="210" role="img" aria-label="Evolução percentual da presença por ensaio"></canvas></div></article></div>
+            </div>
+          </section>
+
+          <section class="section-block members-section" id="integrantes" aria-labelledby="membersHeading">
+            <div class="section-heading"><div><span class="section-kicker">ANÁLISE INDIVIDUAL</span><h2 id="membersHeading">Frequência dos integrantes</h2><p>Comparativo de presenças integrais, parciais, faltas e aproveitamento por músico.</p></div><span class="section-meta"><i class="fa-solid fa-users" aria-hidden="true"></i> Visão por integrante</span></div>
+            <div class="surface-card table-surface"><div class="table-responsive"><table class="table member-table mb-0"><caption class="visually-hidden">Resumo individual por integrante</caption><thead><tr><th scope="col">INTEGRANTE</th><th scope="col">PRESENÇAS</th><th scope="col">PARCIAIS</th><th scope="col">JUSTIFICADAS</th><th scope="col">NÃO JUSTIFICADAS</th><th scope="col">TAXA DE FALTAS</th><th scope="col">ÚLTIMO REGISTRO</th></tr></thead><tbody id="membersTbody"></tbody></table></div></div>
+          </section>
+
+          <section class="section-block rehearsals-section" id="ensaios" aria-labelledby="rehearsalsHeading">
+            <div class="section-heading"><div><span class="section-kicker">CONSULTA E LANÇAMENTOS</span><h2 id="rehearsalsHeading">Histórico de ensaios</h2><p>Pesquise, filtre, edite e acompanhe cada chamada registrada.</p></div><button type="button" class="btn btn-ui btn-outline-ui" id="exportCsvButton"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Exportar CSV</button></div>
+            <div class="surface-card rehearsals-surface"><div class="table-toolbar"><div class="toolbar-intro"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>Registros e chamadas</span></div><div class="toolbar-filters"><label for="rehearsalSearch" class="visually-hidden">Pesquisar ensaios</label><div class="search-field"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="rehearsalSearch" type="search" class="form-control" placeholder="Pesquisar data ou local..."></div><label for="rehearsalFilter" class="visually-hidden">Filtrar ensaios</label><select id="rehearsalFilter" class="form-select"><option value="todos">Todos os ensaios</option><option value="com-faltas">Com faltas</option><option value="sem-faltas">Sem faltas</option><option value="pendentes">Com pendências</option></select></div></div><div class="table-responsive"><table id="rehearsalsTable" class="table rehearsal-table w-100 mb-0"><caption class="visually-hidden">Tabela paginada de ensaios e suas frequências</caption><thead><tr><th scope="col">DATA E HORA</th><th scope="col">LOCAL</th><th scope="col">PRESENÇAS</th><th scope="col">FALTAS</th><th scope="col">FREQUÊNCIA</th><th scope="col">AÇÕES</th><th scope="col" class="filter-only" aria-hidden="true">FILTRO INTERNO</th></tr></thead><tbody></tbody></table></div></div>
+          </section>
+
+          <section class="section-block reports-section" id="relatorios" aria-labelledby="reportsHeading"><div class="report-banner"><div class="report-icon"><i class="fa-solid fa-file-shield" aria-hidden="true"></i></div><div class="report-copy"><span class="section-kicker">DADOS DO SISTEMA</span><h2 id="reportsHeading">Registros no Supabase</h2><p>Os registros são persistidos no banco de dados com controle de acesso. Os formatos JSON e Markdown podem ser baixados como cópias de segurança. Também é possível importar um backup existente.</p></div><div class="report-actions"><label class="btn btn-ui btn-outline-ui" for="importJsonInput"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Importar JSON</label><input class="visually-hidden" id="importJsonInput" type="file" accept=".json,application/json" aria-label="Selecionar backup JSON para importação"><button type="button" class="btn btn-ui btn-outline-ui" id="downloadJsonButton"><i class="fa-solid fa-file-code" aria-hidden="true"></i> Baixar JSON</button><button type="button" class="btn btn-ui btn-primary-ui" id="downloadMdButton"><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i> Baixar relatório</button></div></div></section>
+
+          <footer class="app-footer"><span>© 2026 · Orquestra Sinfônica da Universidade de Rio Verde (UniRV)</span><span>Gestão de frequência <i class="fa-solid fa-music" aria-hidden="true"></i></span></footer>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="offcanvas offcanvas-start mobile-sidebar" tabindex="-1" id="menuMobile" aria-labelledby="menuMobileTitle"><div class="offcanvas-header"><h2 class="offcanvas-title" id="menuMobileTitle">Orquestra Sinfônica · UniRV</h2><button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button></div><nav class="offcanvas-body sidebar-navigation" aria-label="Navegação móvel"><a href="#visao-geral" class="side-link is-current" data-bs-dismiss="offcanvas"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Visão geral</a><a href="#integrantes" class="side-link" data-bs-dismiss="offcanvas"><i class="fa-solid fa-users" aria-hidden="true"></i> Integrantes</a><a href="#ensaios" class="side-link" data-bs-dismiss="offcanvas"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Histórico de ensaios</a><a href="#relatorios" class="side-link" data-bs-dismiss="offcanvas"><i class="fa-solid fa-file-lines" aria-hidden="true"></i> Relatórios</a></nav></div>
+
+  <!-- A estrutura do formulário é também o contêiner flexível do modal.
+       Assim o Bootstrap mantém cabeçalho/rodapé visíveis e permite rolagem somente no corpo. -->
+  <div class="modal fade" id="rehearsalModal" tabindex="-1" aria-labelledby="rehearsalModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <form class="modal-content" id="rehearsalForm">
+        <header class="modal-header">
+          <div>
+            <span class="section-kicker">LANÇAMENTO DE CHAMADA</span>
+            <h2 class="modal-title" id="rehearsalModalTitle">Novo ensaio</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </header>
+
+        <div class="modal-body" tabindex="0" aria-label="Formulário e chamada do ensaio">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="rehearsalDate" class="form-label">Data do ensaio *</label>
+              <input id="rehearsalDate" name="date" class="form-control" type="date" required>
+            </div>
+            <div class="col-sm-6">
+              <label for="rehearsalTime" class="form-label">Horário *</label>
+              <input id="rehearsalTime" name="time" class="form-control" type="time" required>
+            </div>
+            <div class="col-12">
+              <label for="rehearsalLocation" class="form-label">Local *</label>
+              <input id="rehearsalLocation" name="location" class="form-control" type="text" maxlength="160" required>
+            </div>
+            <div class="col-12">
+              <label for="rehearsalNotes" class="form-label">Observações</label>
+              <textarea id="rehearsalNotes" name="notes" class="form-control" rows="2" maxlength="1200" placeholder="Informações adicionais sobre o ensaio..."></textarea>
+            </div>
+          </div>
+
+          <section class="attendance-section" aria-labelledby="attendanceSectionTitle">
+            <div class="attendance-title">
+              <div>
+                <h3 id="attendanceSectionTitle">Chamada do naipe</h3>
+                <p>Selecione a situação de cada integrante.</p>
+              </div>
+              <span class="outline-pill" id="attendanceCount">4 integrantes</span>
+            </div>
+            <div id="attendanceFields" class="attendance-fields"></div>
+          </section>
+        </div>
+
+        <footer class="modal-footer modal-footer-between">
+          <button type="button" class="btn btn-ui btn-danger-soft d-none" id="deleteRehearsalButton">
+            <i class="fa-regular fa-trash-can" aria-hidden="true"></i> Excluir ensaio
+          </button>
+          <div class="modal-footer-actions">
+            <button type="button" class="btn btn-ui btn-outline-ui" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-ui btn-primary-ui" id="saveRehearsalButton">
+              <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Salvar alterações
+            </button>
+          </div>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal fade" id="membersModal" tabindex="-1" aria-labelledby="membersModalTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><div><span class="section-kicker">QUADRO DO NAIPE</span><h2 class="modal-title" id="membersModalTitle">Gerenciar integrantes</h2></div><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><p class="muted-text">Integrantes desativados não entram nas novas chamadas, mas permanecem no histórico.</p><ul class="member-manage-list" id="memberManageList"></ul><form id="addMemberForm" class="add-member-form"><label for="newMemberName" class="form-label">Adicionar integrante</label><div class="input-group"><input class="form-control" id="newMemberName" maxlength="80" minlength="2" placeholder="Nome do músico" required><button type="submit" class="btn btn-primary-ui"><i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar</button></div></form></div><div class="modal-footer"><button type="button" class="btn btn-ui btn-outline-ui" data-bs-dismiss="modal">Concluir</button></div></div></div></div>
+
+  <div class="modal fade" id="editMemberModal" tabindex="-1" aria-labelledby="editMemberModalTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><form id="editMemberForm" class="modal-content"><div class="modal-header"><h2 class="modal-title" id="editMemberModalTitle">Editar integrante</h2><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><label for="editMemberName" class="form-label">Nome do integrante</label><input type="text" id="editMemberName" class="form-control" minlength="2" maxlength="80" required><div class="form-check form-switch mt-3"><input type="checkbox" class="form-check-input" id="editMemberActive"><label for="editMemberActive" class="form-check-label">Integrante ativo no naipe</label></div></div><div class="modal-footer"><button type="button" class="btn btn-ui btn-outline-ui" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-ui btn-primary-ui">Salvar</button></div></form></div></div>
+
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title" id="confirmModalTitle">Confirmar exclusão</h2><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><p id="confirmModalText">Confirma a exclusão do ensaio?</p></div><div class="modal-footer"><button class="btn btn-ui btn-outline-ui" data-bs-dismiss="modal" type="button">Cancelar</button><button class="btn btn-ui btn-danger-soft" id="confirmDeleteButton" type="button">Excluir ensaio</button></div></div></div></div>
+
+  <div class="toast-container position-fixed top-0 end-0 p-3" aria-live="polite" aria-atomic="true"><div class="toast app-toast" id="feedbackToast" role="status" aria-live="polite"><div class="toast-header"><i class="fa-solid fa-circle-info me-2" id="toastIcon" aria-hidden="true"></i><strong class="me-auto">Controle de frequência</strong><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fechar"></button></div><div class="toast-body" id="toastMessage"></div></div></div>
+</body>
+</html>

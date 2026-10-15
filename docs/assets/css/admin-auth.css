@@ -1,0 +1,20 @@
+/* Camada de autenticação do painel: nenhuma regra inline. */
+.session-gate{position:fixed;inset:0;z-index:1200;background:#ecf0f3;color:#22303d;display:flex;align-items:center;justify-content:center;gap:.9rem;font:600 .95rem/1.4 system-ui,sans-serif}
+.session-gate i{color:#b58c4f;font-size:1.5rem}
+body.authenticated .session-gate{display:none}
+.admin-home,.admin-logout{text-decoration:none;color:inherit;display:inline-flex;align-items:center;justify-content:center}
+.admin-logout:hover{color:#efb9ac}
+
+/* Presença parcial e responsividade: status independente e meio crédito. */
+.status-badge.is-partial{background:#e3effc;color:#255c8c;border:1px solid #b7d8f3}
+.text-partial{color:#367bac}
+.legend-dot.is-partial{background:#4888bd}
+#attendanceFields .attendance-row{min-width:0}
+.admin-logout,.hub-control{display:inline-flex;align-items:center;justify-content:center}
+#toggleSidebarButton{align-items:center;justify-content:center}
+#toggleSidebarButton i{margin:0;line-height:1}
+#rehearsalModal .modal-dialog{max-height:calc(100dvh - 2rem)}
+#rehearsalModal .modal-content{max-height:min(820px, calc(100dvh - 2rem));display:flex;flex-direction:column;overflow:hidden}
+#rehearsalModal .modal-body{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+#rehearsalModal .modal-footer,#rehearsalModal .modal-header{flex-shrink:0}
+@media(max-width:575.98px){#rehearsalModal .modal-dialog{margin:.5rem}#rehearsalModal .modal-content{max-height:calc(100dvh - 1rem)}.report-actions{flex-wrap:wrap}}

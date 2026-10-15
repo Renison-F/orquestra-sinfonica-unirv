@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#232a31">
+<title>Área administrativa · Orquestra Sinfônica UniRV</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1/css/all.min.css">
+<link rel="stylesheet" href="assets/css/public.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="assets/js/config.js" defer></script><script src="assets/js/client.js" defer></script><script src="assets/js/login.js" defer></script>
+</head><body class="login-page">
+<header class="public-topbar"><div class="public-brand"><span class="brand-mark"><i class="fa-solid fa-music" aria-hidden="true"></i></span><span><strong>ORQUESTRA SINFÔNICA</strong><small>UNIVERSIDADE DE RIO VERDE · UniRV</small></span></div><a class="back-link" href="index.html"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Visão pública</a></header>
+<main id="conteudo" class="login-shell">
+<article class="login-card"><div class="login-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></div><span class="eyebrow">ACESSO RESTRITO</span><h1>Entrar na administração</h1><p class="login-lead">Controle de ensaios, frequência e justificativas. Somente administradores autorizados podem alterar registros.</p>
+<form id="loginForm"><div class="mb-3"><label class="form-label" for="loginEmail">E-mail</label><input class="form-control" type="email" id="loginEmail" autocomplete="username" required placeholder="seu@email.com"></div><div class="mb-4"><label class="form-label" for="loginPassword">Senha</label><input class="form-control" type="password" id="loginPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button class="login-submit" type="submit" id="submitLogin"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> Acessar painel</button><p id="loginStatus" class="login-status" role="alert" aria-live="polite"></p></form>
+<div class="login-foot"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> A autenticação é verificada pelo Supabase. A senha não é armazenada no site.</div>
+</article></main>
+</body></html>
