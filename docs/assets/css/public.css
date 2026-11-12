@@ -70,6 +70,11 @@
 .search>i{display:block;height:1em;margin-top:0}
 .top-login{gap:8px}
 @media(max-width:400px){.top-login{width:40px;height:40px;padding:0;gap:0}.top-login span{display:none}.public-topbar{gap:10px}.public-brand{min-width:0;flex:1 1 auto}.public-brand strong,.public-brand small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+/* Pontos de situação com ícone SVG: centro geométrico exato */
+.tl-dot,.st-dot{box-sizing:border-box;display:grid;place-items:center;padding:0}
+.st-ico{display:block;width:60%;height:60%;overflow:visible}
+.tl-dot .st-ico{width:13px;height:13px}.st-dot .st-ico{width:11px;height:11px}
+.s-pendente .st-ico{color:#6f7b84}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.musician-card,.kpi-bar span{transition:none}.musician-card:hover{transform:none}}
 @media(max-width:1180px){.hero-block{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.musician-grid{grid-template-columns:minmax(0,1fr)}.toolbar .search{flex-basis:100%}.legend-inline{margin-left:auto}.donut-layout{grid-template-columns:190px 1fr}.donut-container canvas{width:190px;height:190px}.overview-grid{grid-template-columns:1fr 1fr}.legend-inline{margin-left:0}}
 @media(max-width:900px){.top-links{display:none}.kpis{grid-template-columns:1fr 1fr}.legend-inline{margin-left:0}.overview-grid{grid-template-columns:1fr}.musician-grid{grid-template-columns:1fr}.donut-layout{grid-template-columns:220px 1fr}.donut-container canvas{width:220px;height:220px}}
