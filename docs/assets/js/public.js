@@ -14,7 +14,7 @@
   const fold = s => String(s).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
   const LABEL = {presente:'Presença integral', parcial:'Presença parcial', justificada:'Falta justificada', falta:'Falta não justificada', pendente:'Chamada pendente'};
-  const ICON = {falta:'fa-xmark', justificada:'fa-file-lines', parcial:'fa-circle-half-stroke'};
+  const ICON = {presente:'fa-solid fa-check', parcial:'fa-solid fa-circle-half-stroke', justificada:'fa-solid fa-file-lines', falta:'fa-solid fa-xmark', pendente:'fa-regular fa-clock'};
   const CHIP = {falta:'Falta', justificada:'Justificada', parcial:'Parcial'};
   const isMiss = s => s === 'falta' || s === 'justificada' || s === 'parcial';
 
@@ -85,8 +85,8 @@
       .filter(([, c]) => c).map(([s, c]) => `<span class="s-${s}" style="flex:${c}" title="${LABEL[s]}: ${c}"></span>`).join('');
     const misses = history.filter(h => isMiss(h.status));
     const timeline = history.length ? `<div class="timeline"><div class="timeline-head"><span>LINHA DO TEMPO</span><span>${plural(history.length, 'ensaio', 'ensaios')}</span></div>
-      <div class="tl-row">${history.map(h => { const miss = isMiss(h.status); const d = dayMonth(h.date); return `<div class="tl-item${miss ? ' miss' : ''}" title="${d} · ${LABEL[h.status] || h.status}"><span class="tl-dot s-${escapeHtml(h.status)}">${miss ? `<i class="fa-solid ${ICON[h.status]}" aria-hidden="true"></i>` : ''}</span><span class="tl-date">${d}</span></div>`; }).join('')}</div>
-      ${misses.length ? `<div class="miss-list">${misses.map(h => `<span class="miss-chip ${h.status}"><i class="fa-solid ${ICON[h.status]}" aria-hidden="true"></i>${dayMonth(h.date)} · ${CHIP[h.status]}</span>`).join('')}</div>` : '<div class="no-miss"><i class="fa-solid fa-medal" aria-hidden="true"></i> Nenhuma falta registrada</div>'}</div>` : '';
+      <div class="tl-row">${history.map(h => { const miss = isMiss(h.status); const d = dayMonth(h.date); return `<div class="tl-item${miss ? ' miss' : ''}" title="${d} · ${LABEL[h.status] || h.status}"><span class="tl-dot s-${escapeHtml(h.status)}">${ICON[h.status] ? `<i class="${ICON[h.status]}" aria-hidden="true"></i>` : ''}</span><span class="tl-date">${d}</span></div>`; }).join('')}</div>
+      ${misses.length ? `<div class="miss-list">${misses.map(h => `<span class="miss-chip ${h.status}"><i class="${ICON[h.status]}" aria-hidden="true"></i>${dayMonth(h.date)} · ${CHIP[h.status]}</span>`).join('')}</div>` : '<div class="no-miss"><i class="fa-solid fa-medal" aria-hidden="true"></i> Nenhuma falta registrada</div>'}</div>` : '';
     return `<article class="musician-card level-${level}" id="musico-${escapeHtml(member.id)}" data-name="${escapeHtml(fold(member.name))}">
       <div class="musician-top"><span class="musician-avatar">${initials}</span><span class="musician-title"><strong>${name}</strong><small>${member.active ? 'Integrante do naipe' : 'Inativo'} ${statusBadge(level)}</small></span>
       <span class="mc-rates"><span class="mc-rate ok"><b>${format(member.frequency)}</b><small>PRESENÇA</small></span><span class="mc-rate bad"><b>${format(absenceOf(member))}</b><small>FALTAS</small></span></span></div>
