@@ -87,7 +87,8 @@
   function card(member) {
     const name = escapeHtml(member.name);
     const initials = escapeHtml(member.name.trim().split(/\s+/).slice(0, 2).map(v => v[0]?.toUpperCase()).join(''));
-    const history = Array.isArray(member.history) ? member.history : [];
+    /* Ensaios futuros não entram na linha do tempo, exceto o próximo. */
+    const history = (Array.isArray(member.history) ? member.history : []).filter(h => startsAt(h) <= new Date() || `${h.date} ${h.time}` === nextKey);
     const level = levelOf(member);
     const faults = member.justified + member.absent;
     const segments = [['presente', member.present], ['parcial', member.partial], ['justificada', member.justified], ['falta', member.absent]]
@@ -118,6 +119,48 @@
       ${over.length ? `<div class="alert-row"><span class="alert-tag over">Acima do limite</span>${over.map(link).join('')}</div>` : ''}
       ${warn.length ? `<div class="alert-row"><span class="alert-tag warn">Atenção</span>${warn.map(link).join('')}</div>` : ''}</div>`;
     box.hidden = false;
+  }
+
+  /* Agenda: o último ensaio realizado e o próximo são decididos pelo relógio de quem abre a página. */
+  const WEEKDAY = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+  const MONTH = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const startsAt = e => new Date(`${e.date}T${e.time || '00:00'}:00`);
+  let agenda = [];
+  let agendaTimer = null;
+  let nextKey = null;
+  function countdown(e, now) {
+    const today = new Date(now); today.setHours(0, 0, 0, 0);
+    const day = startsAt(e); day.setHours(0, 0, 0, 0);
+    const days = Math.round((day - today) / 864e5);
+    if (days > 1) return `Em ${days} dias`;
+    if (days === 1) return 'Amanhã';
+    const ms = startsAt(e) - now; const h = Math.floor(ms / 36e5); const m = Math.max(1, Math.ceil(ms % 36e5 / 6e4));
+    return `Hoje · em ${h ? `${h}h ` : ''}${m}min`;
+  }
+  function paintAgenda() {
+    const now = new Date();
+    const past = agenda.filter(e => startsAt(e) <= now);
+    const next = agenda.find(e => startsAt(e) > now);
+    const last = past.at(-1);
+    const key = next ? `${next.date} ${next.time}` : null;
+    const changed = key !== nextKey; nextKey = key;
+    set('statRehearsals', past.length);
+    if (changed && members.length) renderGrid();
+    if (last) { const [y, mo, d] = last.date.split('-'); set('lastDate', `${d}/${mo}/${y}${last.time ? ` · ${last.time}` : ''}`); set('lastPlace', last.location || '—'); }
+    set('statRehearsalsDetail', agenda.length - past.length ? `Realizados · ${plural(agenda.length - past.length, 'agendado', 'agendados')}` : 'Realizados · nenhum agendado');
+    el('nextCard').classList.toggle('is-empty', !next);
+    el('nextInfo').hidden = !next; el('nextCount').hidden = !next;
+    if (!next) { set('nextDay', '—'); set('nextMonth', ''); set('nextWeekday', 'Nenhum ensaio agendado'); el('nextCard').setAttribute('aria-label', 'Próximo ensaio: nenhum agendado'); return; }
+    const [, mo, d] = next.date.split('-');
+    const weekday = WEEKDAY[startsAt(next).getDay()];
+    set('nextDay', d); set('nextMonth', MONTH[Number(mo) - 1]); set('nextWeekday', weekday);
+    set('nextTime', next.time || '—'); set('nextPlace', next.location || '—'); set('nextCount', countdown(next, now));
+    el('nextCard').setAttribute('aria-label', `Próximo ensaio: ${weekday}, ${d}/${mo} às ${next.time}, ${next.location || ''}`);
+  }
+  function renderAgenda(list) {
+    agenda = list.filter(e => e?.date).sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
+    paintAgenda();
+    clearInterval(agendaTimer); agendaTimer = setInterval(paintAgenda, 60000);
   }
 
   let members = [];
@@ -151,7 +194,7 @@
   }
 
   function view(data) {
-    const {rehearsalCount = 0, lastRehearsal, totals = {}} = data;
+    const {rehearsalCount = 0, lastRehearsal, schedule, totals = {}} = data;
     members = data.members || [];
     const absence = totals.recorded ? Math.round((100 - Number(totals.frequency ?? 0)) * 10) / 10 : null;
     const active = members.filter(m => m.active);
@@ -161,15 +204,13 @@
     el('statFrequencyBar').style.width = `${Math.max(0, Math.min(100, Number(totals.frequency ?? 0)))}%`;
     set('statAbsence', format(absence));
     set('statAbsenceDetail', `${plural((totals.justified || 0) + (totals.absent || 0), 'falta', 'faltas')} · ${plural(totals.partial || 0, 'parcial', 'parciais')}`);
-    set('statRehearsals', rehearsalCount);
-    if (totals.pending) set('statRehearsalsDetail', 'Há chamadas em aberto');
     set('statMembers', active.length);
     set('statMembersDetail', overCount ? `${overCount} acima do limite de ${ABSENCE_LIMIT}%` : 'Todos dentro do limite');
     el('statMembersDetail').classList.toggle('is-over', overCount > 0);
     set('memberCounter', plural(members.length, 'músico', 'músicos'));
     set('donutRate', format(totals.frequency));
     for (const [id, key] of [['countPresent', 'present'], ['countPartial', 'partial'], ['countJustified', 'justified'], ['countAbsent', 'absent'], ['countRecorded', 'recorded']]) set(id, totals[key] ?? 0);
-    if (lastRehearsal?.date) { const [year, month, day] = lastRehearsal.date.split('-'); set('lastDate', `${day}/${month}/${year}${lastRehearsal.time ? ` · ${lastRehearsal.time}` : ''}`); set('lastPlace', lastRehearsal.location || '—'); }
+    renderAgenda(Array.isArray(schedule) ? schedule : (lastRehearsal?.date ? [lastRehearsal] : []));
     limitAlert(members);
     renderGrid();
     chart(totals); window.addEventListener('resize', () => { chart(totals); fitTimelines(); }, {passive: true});
