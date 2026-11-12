@@ -15,15 +15,9 @@
 
   const LABEL = {presente:'Presença integral', parcial:'Presença parcial', justificada:'Falta justificada', falta:'Falta não justificada', pendente:'Chamada pendente'};
   const ICON = {presente:'fa-solid fa-check', parcial:'fa-solid fa-circle-half-stroke', justificada:'fa-solid fa-file-lines', falta:'fa-solid fa-xmark', pendente:'fa-regular fa-clock'};
-  /* Ícones dos pontos de situação: SVG em grade 16x16 com o desenho centrado em (8,8). */
-  const DOT_SVG = {
-    presente: '<path d="M4.5 8.25 7 10.75 11.5 5.25" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
-    parcial: '<circle cx="8" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 3.4a4.6 4.6 0 0 1 0 9.2z" fill="currentColor"/>',
-    justificada: '<rect x="4.6" y="3.4" width="6.8" height="9.2" rx="1.3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6.6 7h2.8M6.6 9.4h2.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
-    falta: '<path d="M5 5l6 6M11 5l-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
-    pendente: '<circle cx="8" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 5.6V8l1.7 1.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
-  };
-  const dotIcon = status => DOT_SVG[status] ? `<svg class="st-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false">${DOT_SVG[status]}</svg>` : '';
+  /* Ícones dos pontos de situação (Font Awesome Free 7.3.1 em SVG, ver icons.js). */
+  const DOT_ICON = {presente: 'check', parcial: 'circle-half-stroke', justificada: 'file-lines', falta: 'xmark', pendente: 'regular/clock'};
+  const dotIcon = status => DOT_ICON[status] ? window.OrchestraIcons.svg(DOT_ICON[status], 'st-ico') : '';
   const CHIP = {falta:'Falta', justificada:'Justificada', parcial:'Parcial'};
   const isMiss = s => s === 'falta' || s === 'justificada' || s === 'parcial';
 
