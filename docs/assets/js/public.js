@@ -15,6 +15,15 @@
 
   const LABEL = {presente:'Presença integral', parcial:'Presença parcial', justificada:'Falta justificada', falta:'Falta não justificada', pendente:'Chamada pendente'};
   const ICON = {presente:'fa-solid fa-check', parcial:'fa-solid fa-circle-half-stroke', justificada:'fa-solid fa-file-lines', falta:'fa-solid fa-xmark', pendente:'fa-regular fa-clock'};
+  /* Ícones dos pontos de situação: SVG em grade 16x16 com o desenho centrado em (8,8). */
+  const DOT_SVG = {
+    presente: '<path d="M4.5 8.25 7 10.75 11.5 5.25" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+    parcial: '<circle cx="8" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 3.4a4.6 4.6 0 0 1 0 9.2z" fill="currentColor"/>',
+    justificada: '<rect x="4.6" y="3.4" width="6.8" height="9.2" rx="1.3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6.6 7h2.8M6.6 9.4h2.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+    falta: '<path d="M5 5l6 6M11 5l-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+    pendente: '<circle cx="8" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 5.6V8l1.7 1.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  };
+  const dotIcon = status => DOT_SVG[status] ? `<svg class="st-ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false">${DOT_SVG[status]}</svg>` : '';
   const CHIP = {falta:'Falta', justificada:'Justificada', parcial:'Parcial'};
   const isMiss = s => s === 'falta' || s === 'justificada' || s === 'parcial';
 
@@ -85,7 +94,7 @@
       .filter(([, c]) => c).map(([s, c]) => `<span class="s-${s}" style="flex:${c}" title="${LABEL[s]}: ${c}"></span>`).join('');
     const misses = history.filter(h => isMiss(h.status));
     const timeline = history.length ? `<div class="timeline"><div class="timeline-head"><span>LINHA DO TEMPO</span><span>${plural(history.length, 'ensaio', 'ensaios')}</span></div>
-      <div class="tl-row">${history.map(h => { const miss = isMiss(h.status); const d = dayMonth(h.date); return `<div class="tl-item${miss ? ' miss' : ''}" title="${d} · ${LABEL[h.status] || h.status}"><span class="tl-dot s-${escapeHtml(h.status)}">${ICON[h.status] ? `<i class="${ICON[h.status]}" aria-hidden="true"></i>` : ''}</span><span class="tl-date">${d}</span></div>`; }).join('')}</div>
+      <div class="tl-row">${history.map(h => { const miss = isMiss(h.status); const d = dayMonth(h.date); return `<div class="tl-item${miss ? ' miss' : ''}" title="${d} · ${LABEL[h.status] || h.status}"><span class="tl-dot s-${escapeHtml(h.status)}">${dotIcon(h.status)}</span><span class="tl-date">${d}</span></div>`; }).join('')}</div>
       ${misses.length ? `<div class="miss-list">${misses.map(h => `<span class="miss-chip ${h.status}"><i class="${ICON[h.status]}" aria-hidden="true"></i>${dayMonth(h.date)} · ${CHIP[h.status]}</span>`).join('')}</div>` : '<div class="no-miss"><i class="fa-solid fa-medal" aria-hidden="true"></i> Nenhuma falta registrada</div>'}</div>` : '';
     return `<article class="musician-card level-${level}" id="musico-${escapeHtml(member.id)}" data-name="${escapeHtml(fold(member.name))}">
       <div class="musician-top"><span class="musician-avatar">${initials}</span><span class="musician-title"><strong>${name}</strong><small>${member.active ? 'Integrante do naipe' : 'Inativo'} ${statusBadge(level)}</small></span>
