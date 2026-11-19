@@ -95,3 +95,11 @@ i.ico>svg{display:block;width:100%;height:100%;overflow:visible}.limit-note>i.ic
 @media(max-width:900px){.top-links{display:none}.legend-inline{margin-left:0}.overview-grid{grid-template-columns:1fr}.musician-grid{grid-template-columns:1fr}.donut-layout{grid-template-columns:220px 1fr}.donut-container canvas{width:220px;height:220px}}
 @media(max-width:700px){.public-page .hero-block{grid-template-columns:1fr}.next-card{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:6px 14px;padding:18px 0;border:0;border-top:1px solid #ffffff1f;border-bottom:1px solid #ffffff1f}.next-label{flex-basis:100%;justify-content:center}.next-date{flex-direction:row;align-items:baseline;gap:6px;margin:0}.next-day{font-size:34px}.next-info{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:6px 14px;flex-basis:100%}.next-count{margin-top:2px}}
 @media(max-width:570px){.public-topbar{padding:10px 17px;min-height:66px}.public-brand strong{font-size:11px}.public-brand small{font-size:10px}.brand-mark{width:31px;height:31px}.top-login{padding:10px}.top-login i:last-child{display:none}.public-shell{padding:17px 15px}.hero-block{padding:24px 18px}.hero-copy h1{font-size:25px}.kpi{padding:13px 12px}.kpi b{font-size:24px}.kpi small{letter-spacing:.05em}.tl-row{grid-auto-columns:minmax(29px,1fr)}.tl-date{letter-spacing:-.02em}.tl-row::before{left:10px;right:10px}.section-head{align-items:flex-start}.section-head h2{font-size:18px}.section-head .subtle-chip{display:none}.seg{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:2px}.seg button{padding:7px 6px}.panel-card{padding:17px}.donut-layout{display:flex;flex-direction:column}.musician-card{padding:17px}.musician-top{flex-wrap:wrap}.mc-rates{width:100%;justify-content:flex-start;text-align:left;gap:22px;padding-left:55px}.mc-rate{align-items:flex-start}.public-footer{font-size:11px}.limit-alert{padding:13px}}
+
+/* Falta abonada: conta como presença, exibida em lilás. */
+:root{--excused:#7b5ea7}
+.s-abonada{background:var(--excused)}
+.miss-chip.abonada{background:#f1ecf8;color:#5b4285}
+.mark-excused{background:#f1ecf8;color:var(--excused)}
+.musician-stats span.stat-excused i{color:var(--excused)}
+.public-legend small{color:var(--muted);font-size:10.5px}
