@@ -18,3 +18,22 @@ body.authenticated .session-gate{display:none}
 #rehearsalModal .modal-body{min-height:0;overflow-y:auto;overscroll-behavior:contain}
 #rehearsalModal .modal-footer,#rehearsalModal .modal-header{flex-shrink:0}
 @media(max-width:575.98px){#rehearsalModal .modal-dialog{margin:.5rem}#rehearsalModal .modal-content{max-height:calc(100dvh - 1rem)}.report-actions{flex-wrap:wrap}}
+
+/* Falta abonada: conta como presença, exibida em lilás; atestado em bucket privado. */
+.status-badge.is-excused{background:#f1ecf8;color:#5b4285;border:1px solid #d9cdee}
+.text-excused{color:#6a4f98}
+.legend-dot.is-excused{background:#7b5ea7}
+.attendance-row .attendance-reason,.attendance-row .attendance-attachment{grid-column:1/-1}
+.attendance-attachment{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;border:1px dashed #cdbfe6;border-radius:9px;background:#faf8fd}
+.attendance-attachment[hidden]{display:none}
+.attachment-title{font-size:11px;font-weight:750;color:#5b4285;display:inline-flex;align-items:center;gap:6px;letter-spacing:.02em}
+.attachment-body{flex:1 1 220px;min-width:0;display:flex;align-items:center;gap:6px}
+.attachment-file{display:inline-flex;align-items:center;gap:7px;min-width:0;font-size:12px;color:#2d3640}
+.attachment-file>i{color:#6a4f98;flex:none}
+.attachment-file.is-new>i{color:#367bac}
+.attachment-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
+.attachment-file small,.attachment-empty{font-size:11px;color:#6b7781;white-space:nowrap}
+.attachment-empty{white-space:normal}
+.attachment-pick{font-size:12px;padding:6px 11px;cursor:pointer}
+.attendance-file:focus-visible+.attachment-pick,.attachment-pick:focus-within{outline:2px solid #7b5ea7;outline-offset:2px}
+@media(max-width:575.98px){.attendance-row .attendance-reason,.attendance-row .attendance-attachment{grid-column:auto}.attachment-pick{width:100%;justify-content:center}}

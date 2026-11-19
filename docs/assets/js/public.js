@@ -13,15 +13,18 @@
   const dayMonth = date => { const [, m, d] = String(date).split('-'); return `${d}/${m}`; };
   const fold = s => String(s).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
-  const LABEL = {presente:'Presença integral', parcial:'Presença parcial', justificada:'Falta justificada', falta:'Falta não justificada', pendente:'Chamada pendente'};
-  const ICON = {presente:'fa-solid fa-check', parcial:'fa-solid fa-circle-half-stroke', justificada:'fa-solid fa-file-lines', falta:'fa-solid fa-xmark', pendente:'fa-regular fa-clock'};
+  const LABEL = {presente:'Presença integral', parcial:'Presença parcial', justificada:'Falta justificada', abonada:'Falta abonada', falta:'Falta não justificada', pendente:'Chamada pendente'};
+  const ICON = {presente:'fa-solid fa-check', parcial:'fa-solid fa-circle-half-stroke', justificada:'fa-solid fa-file-lines', abonada:'fa-solid fa-file-circle-check', falta:'fa-solid fa-xmark', pendente:'fa-regular fa-clock'};
   /* Ícones dos pontos de situação (Font Awesome Free 7.3.1 em SVG, ver icons.js). */
-  const DOT_ICON = {presente: 'check', parcial: 'circle-half-stroke', justificada: 'file-lines', falta: 'xmark', pendente: 'regular/clock'};
+  const DOT_ICON = {presente: 'check', parcial: 'circle-half-stroke', justificada: 'file-lines', abonada: 'file-circle-check', falta: 'xmark', pendente: 'regular/clock'};
   const dotIcon = status => DOT_ICON[status] ? window.OrchestraIcons.svg(DOT_ICON[status], 'st-ico') : '';
-  const CHIP = {falta:'Falta', justificada:'Justificada', parcial:'Parcial'};
+  const CHIP = {falta:'Falta', justificada:'Justificada', abonada:'Abonada', parcial:'Parcial'};
   const isMiss = s => s === 'falta' || s === 'justificada' || s === 'parcial';
+  /* Falta abonada conta como presença no cálculo, mas continua visível como abono. */
+  const isNoted = s => isMiss(s) || s === 'abonada';
+  const excusedOf = m => Number(m.excused || 0);
 
-  /* Taxa de faltas = complemento da frequência (parcial conta meia falta). */
+  /* Taxa de faltas = complemento da frequência (parcial conta meia falta; abonada conta presença). */
   function absenceOf(member) {
     if (!member.recorded) return null;
     return Math.round((100 - Number(member.frequency ?? 0)) * 10) / 10;
@@ -51,9 +54,9 @@
     const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const cx = width / 2, cy = height / 2, r = Math.min(width, height) * .37, thick = Math.min(width, height) * .12;
     ctx.lineWidth = thick; ctx.strokeStyle = '#e5e9ec'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-    const values = [totals.present, totals.partial, totals.justified, totals.absent].map(Number);
+    const values = [totals.present, totals.partial, totals.excused || 0, totals.justified, totals.absent].map(Number);
     const total = values.reduce((a, b) => a + b, 0); if (!total) return;
-    const colors = ['#248975', '#4888bd', '#c99b59', '#cf6667']; let angle = -Math.PI / 2;
+    const colors = ['#248975', '#4888bd', '#7b5ea7', '#c99b59', '#cf6667']; let angle = -Math.PI / 2;
     values.forEach((count, i) => {
       if (!count) return; const sweep = Math.PI * 2 * count / total;
       ctx.beginPath(); ctx.strokeStyle = colors[i]; ctx.arc(cx, cy, r, angle + 0.014, angle + sweep - 0.014); ctx.stroke(); angle += sweep;
@@ -85,9 +88,9 @@
     const history = (Array.isArray(member.history) ? member.history : []).filter(h => startsAt(h) <= new Date() || `${h.date} ${h.time}` === nextKey);
     const level = levelOf(member);
     const faults = member.justified + member.absent;
-    const segments = [['presente', member.present], ['parcial', member.partial], ['justificada', member.justified], ['falta', member.absent]]
+    const segments = [['presente', member.present], ['abonada', excusedOf(member)], ['parcial', member.partial], ['justificada', member.justified], ['falta', member.absent]]
       .filter(([, c]) => c).map(([s, c]) => `<span class="s-${s}" style="flex:${c}" title="${LABEL[s]}: ${c}"></span>`).join('');
-    const misses = history.filter(h => isMiss(h.status));
+    const misses = history.filter(h => isNoted(h.status));
     const timeline = history.length ? `<div class="timeline"><div class="timeline-head"><span>LINHA DO TEMPO</span><span>${plural(history.length, 'ensaio', 'ensaios')}</span></div>
       <div class="tl-row">${history.map(h => { const miss = isMiss(h.status); const d = dayMonth(h.date); return `<div class="tl-item${miss ? ' miss' : ''}" title="${d} · ${LABEL[h.status] || h.status}"><span class="tl-dot s-${escapeHtml(h.status)}">${dotIcon(h.status)}</span><span class="tl-date">${d}</span></div>`; }).join('')}</div>
       ${misses.length ? `<div class="miss-list">${misses.map(h => `<span class="miss-chip ${h.status}"><i class="${ICON[h.status]}" aria-hidden="true"></i>${dayMonth(h.date)} · ${CHIP[h.status]}</span>`).join('')}</div>` : '<div class="no-miss"><i class="fa-solid fa-medal" aria-hidden="true"></i> Nenhuma falta registrada</div>'}</div>` : '';
@@ -95,7 +98,7 @@
       <div class="musician-top"><span class="musician-avatar">${initials}</span><span class="musician-title"><strong>${name}</strong><small>${member.active ? 'Integrante do naipe' : 'Inativo'} ${statusBadge(level)}</small></span>
       <span class="mc-rates"><span class="mc-rate ok"><b>${format(member.frequency)}</b><small>PRESENÇA</small></span><span class="mc-rate bad"><b>${format(absenceOf(member))}</b><small>FALTAS</small></span></span></div>
       <div class="split-wrap"><div class="split-track" role="img" aria-label="Presença ${format(member.frequency)}, faltas ${format(absenceOf(member))}">${segments}</div><span class="limit-marker" style="left:${100 - ABSENCE_LIMIT}%" title="Limite de ${ABSENCE_LIMIT}% de faltas"></span></div>
-      <div class="musician-stats"><span><i class="fa-solid fa-check" aria-hidden="true"></i> ${plural(member.present, 'integral', 'integrais')}</span><span><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> ${plural(member.partial, 'parcial', 'parciais')}</span><span><i class="fa-solid fa-xmark" aria-hidden="true"></i> ${plural(faults, 'falta', 'faltas')} <small>(${member.justified} just. · ${member.absent} não just.)</small></span></div>
+      <div class="musician-stats"><span><i class="fa-solid fa-check" aria-hidden="true"></i> ${plural(member.present, 'integral', 'integrais')}</span><span><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> ${plural(member.partial, 'parcial', 'parciais')}</span><span><i class="fa-solid fa-xmark" aria-hidden="true"></i> ${plural(faults, 'falta', 'faltas')} <small>(${member.justified} just. · ${member.absent} não just.)</small></span>${excusedOf(member) ? `<span class="stat-excused"><i class="fa-solid fa-file-circle-check" aria-hidden="true"></i> ${plural(excusedOf(member), 'abonada', 'abonadas')} <small>(conta presença)</small></span>` : ''}</div>
       ${marginText(member, level)}
       ${timeline}
       <div class="musician-caption">${member.recorded} chamada(s) concluída(s)${member.pending ? ` · ${member.pending} pendente(s)` : ''}</div></article>`;
@@ -197,13 +200,13 @@
     set('statFrequencyDetail', `${totals.recorded || 0} chamadas concluídas`);
     el('statFrequencyBar').style.width = `${Math.max(0, Math.min(100, Number(totals.frequency ?? 0)))}%`;
     set('statAbsence', format(absence));
-    set('statAbsenceDetail', `${plural((totals.justified || 0) + (totals.absent || 0), 'falta', 'faltas')} · ${plural(totals.partial || 0, 'parcial', 'parciais')}`);
+    set('statAbsenceDetail', `${plural((totals.justified || 0) + (totals.absent || 0), 'falta', 'faltas')} · ${plural(totals.partial || 0, 'parcial', 'parciais')}${totals.excused ? ` · ${plural(totals.excused, 'abonada', 'abonadas')}` : ''}`);
     set('statMembers', active.length);
     set('statMembersDetail', overCount ? `${overCount} acima do limite de ${ABSENCE_LIMIT}%` : 'Todos dentro do limite');
     el('statMembersDetail').classList.toggle('is-over', overCount > 0);
     set('memberCounter', plural(members.length, 'músico', 'músicos'));
     set('donutRate', format(totals.frequency));
-    for (const [id, key] of [['countPresent', 'present'], ['countPartial', 'partial'], ['countJustified', 'justified'], ['countAbsent', 'absent'], ['countRecorded', 'recorded']]) set(id, totals[key] ?? 0);
+    for (const [id, key] of [['countPresent', 'present'], ['countPartial', 'partial'], ['countExcused', 'excused'], ['countJustified', 'justified'], ['countAbsent', 'absent'], ['countRecorded', 'recorded']]) set(id, totals[key] ?? 0);
     renderAgenda(Array.isArray(schedule) ? schedule : (lastRehearsal?.date ? [lastRehearsal] : []));
     limitAlert(members);
     renderGrid();

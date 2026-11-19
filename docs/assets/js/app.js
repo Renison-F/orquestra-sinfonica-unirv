@@ -11,9 +11,17 @@
     presente: {label: 'Presente', className: 'is-present', icon: 'fa-circle-check'},
     parcial: {label: 'Presença parcial (50%)', className: 'is-partial', icon: 'fa-circle-half-stroke'},
     justificada: {label: 'Justificada', className: 'is-justified', icon: 'fa-notes-medical'},
+    abonada: {label: 'Falta abonada', className: 'is-excused', icon: 'fa-file-circle-check'},
     falta: {label: 'Falta', className: 'is-absent', icon: 'fa-circle-xmark'},
     pendente: {label: 'Pendente', className: 'is-pending', icon: 'fa-clock'}
   };
+  /* Falta abonada conta como presença integral; parcial vale meia presença. */
+  const credit = (c) => c.presente + c.abonada + c.parcial * 0.5;
+  /* Atestados: bucket privado do Supabase Storage, acessível só a administradores. */
+  const ATTACHMENT_BUCKET = 'atestados';
+  const ATTACHMENT_MAX = 5 * 1024 * 1024;
+  const ATTACHMENT_EXT = {'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp'};
+  const attachmentDrafts = new Map(); // memberId -> {current, file, remove}
   let database = null;
   let dataTable = null;
   let editingRehearsal = null;
@@ -87,21 +95,21 @@
     return date.slice(8,10) + '/' + date.slice(5,7);
   }
   function counts(attendance) {
-    const result = {presente: 0, parcial: 0, justificada: 0, falta: 0, pendente: 0};
+    const result = {presente: 0, parcial: 0, justificada: 0, abonada: 0, falta: 0, pendente: 0};
     Object.values(attendance || {}).forEach((item) => { if (item.status in result) result[item.status]++; });
     result.ausencias = result.justificada + result.falta + result.parcial * 0.5;
-    result.registradas = result.presente + result.parcial + result.justificada + result.falta;
+    result.registradas = result.presente + result.parcial + result.justificada + result.abonada + result.falta;
     result.total = result.registradas + result.pendente;
     return result;
   }
   function totals() {
-    const total = {presente: 0, parcial: 0, justificada: 0, falta: 0, pendente: 0};
+    const total = {presente: 0, parcial: 0, justificada: 0, abonada: 0, falta: 0, pendente: 0};
     database.rehearsals.forEach((r) => {
       const c = counts(r.attendance);
       Object.keys(total).forEach((key) => { total[key] += c[key]; });
     });
     total.ausencias = total.justificada + total.falta + total.parcial * 0.5;
-    total.registradas = total.presente + total.parcial + total.justificada + total.falta;
+    total.registradas = total.presente + total.parcial + total.justificada + total.abonada + total.falta;
     return total;
   }
   function memberStats(id) {
@@ -126,28 +134,29 @@
     const active = database.members.filter((member) => member.active).length;
     $id('kpiMembers').textContent = active;
     $id('kpiRehearsals').textContent = database.rehearsals.length;
-    $id('kpiPresence').textContent = `${pct(t.presente + t.parcial * 0.5, t.registradas)}%`;
+    $id('kpiPresence').textContent = `${pct(credit(t), t.registradas)}%`;
     $id('kpiAbsence').textContent = `${pct(t.ausencias, t.registradas)}%`;
-    $id('kpiPresenceDetail').textContent = `${t.presente} presenças integrais + ${t.parcial} parciais (50%)`;
+    $id('kpiPresenceDetail').textContent = `${t.presente} presenças integrais + ${t.parcial} parciais (50%)${t.abonada ? ` + ${one(t.abonada, 'abonada', 'abonadas')}` : ''}`;
     $id('kpiAbsenceDetail').textContent = `${t.falta + t.justificada} faltas integrais e ${t.parcial} parciais`;
     $id('heroLastDate').textContent = latest ? `${dateText(latest.date)} · ${latest.time}` : '—';
     $id('heroLastPlace').textContent = latest ? latest.location : 'Nenhum ensaio';
     $id('updatedAt').textContent = `Atualizado: ${database.updatedAt ? new Intl.DateTimeFormat('pt-BR', {timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short'}).format(new Date(database.updatedAt)) : '—'}`;
-    $id('donutPercent').textContent = `${pct(t.presente + t.parcial * 0.5, t.registradas)}%`;
+    $id('donutPercent').textContent = `${pct(credit(t), t.registradas)}%`;
     $id('legendPresent').textContent = t.presente;
     $id('legendPartial').textContent = t.parcial;
+    $id('legendExcused').textContent = t.abonada;
     $id('legendJustified').textContent = t.justificada;
     $id('legendAbsent').textContent = t.falta;
     $id('legendTotal').textContent = t.registradas;
-    $id('distributionCanvas').setAttribute('aria-label', `${t.presente} presenças integrais, ${t.parcial} parciais, ${t.justificada} faltas justificadas e ${t.falta} faltas não justificadas.`);
+    $id('distributionCanvas').setAttribute('aria-label', `${t.presente} presenças integrais, ${t.parcial} parciais, ${t.abonada} faltas abonadas, ${t.justificada} faltas justificadas e ${t.falta} faltas não justificadas.`);
     drawCharts();
   }
   function renderMembers() {
     $id('membersTbody').innerHTML = database.members.map((m) => {
       const c = memberStats(m.id);
       const p = pct(c.ausencias, c.registradas);
-      return `<tr><td>${person(m)}</td><td><span class="table-number text-present">${c.presente}</span></td><td><span class="table-number text-partial">${c.parcial}</span></td><td><span class="table-number text-justified">${c.justificada}</span></td><td><span class="table-number text-absent">${c.falta}</span></td><td><span class="rate-track"><meter min="0" max="100" low="0" high="100" optimum="0" value="${p}" title="${p}% de faltas"></meter></span><span class="rate-text">${c.registradas ? `${p}%` : '—'}</span></td><td>${badge(c.latest?.status || 'pendente')}${c.latest?.reason ? `<small class="reason-small">${html(c.latest.reason)}</small>` : ''}</td></tr>`;
-    }).join('') || '<tr><td colspan="7" class="text-center">Nenhum integrante cadastrado.</td></tr>';
+      return `<tr><td>${person(m)}</td><td><span class="table-number text-present">${c.presente}</span></td><td><span class="table-number text-partial">${c.parcial}</span></td><td><span class="table-number text-excused">${c.abonada}</span></td><td><span class="table-number text-justified">${c.justificada}</span></td><td><span class="table-number text-absent">${c.falta}</span></td><td><span class="rate-track"><meter min="0" max="100" low="0" high="100" optimum="0" value="${p}" title="${p}% de faltas"></meter></span><span class="rate-text">${c.registradas ? `${p}%` : '—'}</span></td><td>${badge(c.latest?.status || 'pendente')}${c.latest?.reason ? `<small class="reason-small">${html(c.latest.reason)}</small>` : ''}</td></tr>`;
+    }).join('') || '<tr><td colspan="8" class="text-center">Nenhum integrante cadastrado.</td></tr>';
   }
   function renderRehearsals() {
     const search = $id('rehearsalSearch').value;
@@ -156,9 +165,9 @@
     const body = document.querySelector('#rehearsalsTable tbody');
     body.innerHTML = sortedRehearsals().map((r) => {
       const c = counts(r.attendance);
-      const rate = pct(c.presente + c.parcial * 0.5, c.registradas);
+      const rate = pct(credit(c), c.registradas);
       const flags = ['todos', c.ausencias > 0 ? 'com-faltas' : 'sem-faltas', c.pendente > 0 ? 'pendentes' : 'sem-pendentes'].join(' ');
-      return `<tr><td data-order="${html(r.date + r.time)}"><span class="date-strong">${html(dateText(r.date))}</span><span class="date-sub"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${html(r.time)}</span></td><td><span class="location-text"><i class="fa-solid fa-location-dot" aria-hidden="true"></i>${html(r.location)}</span></td><td><span class="table-number text-present">${c.presente}</span> <span class="text-secondary">+ ${c.parcial} parcial / ${c.total}</span></td><td><span class="table-number text-absent">${c.ausencias}</span><span class="date-sub">${one(c.justificada, 'justificada', 'justificadas')}</span></td><td><span class="frequency-badge">${rate}%</span></td><td><span class="row-actions"><button type="button" class="action-icon" data-action="edit-rehearsal" data-id="${html(r.id)}" title="Editar chamada de ${html(dateText(r.date))}" aria-label="Editar ensaio de ${html(dateText(r.date))}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button><button type="button" class="action-icon is-danger" data-action="delete-rehearsal" data-id="${html(r.id)}" title="Excluir ensaio" aria-label="Excluir ensaio de ${html(dateText(r.date))}"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button></span></td><td class="filter-only">${flags}</td></tr>`;
+      return `<tr><td data-order="${html(r.date + r.time)}"><span class="date-strong">${html(dateText(r.date))}</span><span class="date-sub"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${html(r.time)}</span></td><td><span class="location-text"><i class="fa-solid fa-location-dot" aria-hidden="true"></i>${html(r.location)}</span></td><td><span class="table-number text-present">${c.presente}</span> <span class="text-secondary">+ ${c.parcial} parcial${c.abonada ? ` + ${c.abonada} abonada` : ''} / ${c.total}</span></td><td><span class="table-number text-absent">${c.ausencias}</span><span class="date-sub">${one(c.justificada, 'justificada', 'justificadas')}</span></td><td><span class="frequency-badge">${rate}%</span></td><td><span class="row-actions"><button type="button" class="action-icon" data-action="edit-rehearsal" data-id="${html(r.id)}" title="Editar chamada de ${html(dateText(r.date))}" aria-label="Editar ensaio de ${html(dateText(r.date))}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button><button type="button" class="action-icon is-danger" data-action="delete-rehearsal" data-id="${html(r.id)}" title="Excluir ensaio" aria-label="Excluir ensaio de ${html(dateText(r.date))}"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button></span></td><td class="filter-only">${flags}</td></tr>`;
     }).join('');
     if (typeof DataTable !== 'undefined') {
       dataTable = new DataTable('#rehearsalsTable', {
@@ -216,8 +225,8 @@
     const centerX = width / 2, centerY = height / 2;
     const radius = Math.min(width, height) * .385;
     const thickness = Math.max(15, Math.min(width, height) * .11);
-    const values = [t.presente, t.parcial, t.justificada, t.falta];
-    const colors = [colorToken('success'), '#4888bd', colorToken('gold-600'), colorToken('danger')];
+    const values = [t.presente, t.parcial, t.abonada, t.justificada, t.falta];
+    const colors = [colorToken('success'), '#4888bd', '#7b5ea7', colorToken('gold-600'), colorToken('danger')];
     let angle = -Math.PI / 2;
     const length = Math.PI * 2;
     ctx.clearRect(0, 0, width, height);
@@ -255,7 +264,7 @@
     const barW = Math.max(20, Math.min(41, slot * .45));
     list.forEach((r, index) => {
       const c = counts(r.attendance);
-      const p = pct(c.presente + c.parcial * 0.5, c.registradas);
+      const p = pct(credit(c), c.registradas);
       const x = left + slot * index + slot / 2;
       const barH = plotH * p / 100;
       const y = top + plotH - barH;
@@ -293,13 +302,64 @@
       ? Object.keys(record.attendance).map((mid) => database.members.find((m) => m.id === mid) || {id: mid, name: 'Integrante anterior', active: false})
       : database.members.filter((m) => m.active);
     $id('attendanceCount').textContent = one(members.length, 'integrante', 'integrantes');
+    attachmentDrafts.clear();
     $id('attendanceFields').innerHTML = members.map((m) => {
       const a = record?.attendance[m.id] || {status: 'pendente', reason: ''};
+      attachmentDrafts.set(m.id, {current: a.attachment || null, file: null, remove: false});
       const options = Object.entries(statuses).map(([key, item]) => `<option value="${key}" ${a.status === key ? 'selected' : ''}>${item.label === 'Justificada' ? 'Falta justificada' : item.label === 'Falta' ? 'Falta não justificada' : item.label}</option>`).join('');
       const idSafe = html(m.id);
-      return `<div class="attendance-row" data-member-id="${idSafe}">${person(m)}<div><label class="visually-hidden" for="s-${idSafe}">Situação de ${html(m.name)}</label><select id="s-${idSafe}" class="form-select attendance-status">${options}</select></div><div><label class="visually-hidden" for="m-${idSafe}">Motivo ou justificativa de ${html(m.name)}</label><input id="m-${idSafe}" type="text" class="form-control attendance-reason" maxlength="220" placeholder="Motivo ou justificativa (opcional)" value="${html(a.reason)}" ${a.status === 'presente' || a.status === 'pendente' ? 'disabled' : ''}></div></div>`;
+      return `<div class="attendance-row" data-member-id="${idSafe}">${person(m)}<div><label class="visually-hidden" for="s-${idSafe}">Situação de ${html(m.name)}</label><select id="s-${idSafe}" class="form-select attendance-status">${options}</select></div><div class="attendance-reason"><label class="visually-hidden" for="m-${idSafe}">Motivo ou justificativa de ${html(m.name)}</label><input id="m-${idSafe}" type="text" class="form-control attendance-reason-input" maxlength="220" placeholder="Motivo ou justificativa (opcional)" value="${html(a.reason)}" ${a.status === 'presente' || a.status === 'pendente' ? 'disabled' : ''}></div><div class="attendance-attachment" ${a.status === 'abonada' ? '' : 'hidden'}>${attachmentBox(m)}</div></div>`;
     }).join('') || '<p class="muted-text">Nenhum integrante ativo. Cadastre um integrante antes de lançar ensaios.</p>';
     modal('rehearsalModal').show();
+  }
+  /* ---------- Atestado médico da falta abonada ---------- */
+  function fileSize(bytes) {
+    return bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+  function attachmentBox(member) {
+    const draft = attachmentDrafts.get(member.id);
+    const idSafe = html(member.id);
+    const input = `<input id="f-${idSafe}" type="file" class="visually-hidden attendance-file" accept="application/pdf,image/jpeg,image/png,image/webp" aria-label="Anexar atestado médico de ${html(member.name)}"><label class="btn btn-ui btn-outline-ui attachment-pick" for="f-${idSafe}"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> ${draft.file || (draft.current && !draft.remove) ? 'Trocar atestado' : 'Anexar atestado'}</label>`;
+    let info = '<span class="attachment-empty">Nenhum atestado anexado · JPG, PNG, WEBP ou PDF até 5 MB</span>';
+    if (draft.file) {
+      info = `<span class="attachment-file is-new"><i class="fa-solid ${draft.file.type === 'application/pdf' ? 'fa-file-pdf' : 'fa-file-image'}" aria-hidden="true"></i><span class="attachment-name">${html(draft.file.name)}</span><small>${fileSize(draft.file.size)} · será enviado ao salvar</small></span><button type="button" class="action-icon is-danger" data-action="discard-attachment" aria-label="Descartar arquivo selecionado"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>`;
+    } else if (draft.current && !draft.remove) {
+      info = `<span class="attachment-file"><i class="fa-solid ${draft.current.type === 'application/pdf' ? 'fa-file-pdf' : 'fa-file-image'}" aria-hidden="true"></i><span class="attachment-name">${html(draft.current.name)}</span>${draft.current.size ? `<small>${fileSize(draft.current.size)}</small>` : ''}</span><button type="button" class="action-icon" data-action="view-attachment" aria-label="Abrir atestado de ${html(member.name)}" title="Abrir atestado"><i class="fa-solid fa-eye" aria-hidden="true"></i></button><button type="button" class="action-icon is-danger" data-action="remove-attachment" aria-label="Remover atestado de ${html(member.name)}" title="Remover atestado"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>`;
+    } else if (draft.current && draft.remove) {
+      info = `<span class="attachment-empty">Atestado será removido ao salvar.</span><button type="button" class="btn btn-link btn-sm p-0" data-action="undo-remove-attachment">Desfazer</button>`;
+    }
+    return `<span class="attachment-title"><i class="fa-solid fa-file-medical" aria-hidden="true"></i> Atestado médico</span><div class="attachment-body">${info}</div>${input}`;
+  }
+  function refreshAttachment(row) {
+    const member = database.members.find((m) => m.id === row.dataset.memberId) || {id: row.dataset.memberId, name: 'integrante'};
+    row.querySelector('.attendance-attachment').innerHTML = attachmentBox(member);
+  }
+  function storagePath(memberId, type) {
+    return `${memberId.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 80) || 'integrante'}/${crypto.randomUUID()}.${ATTACHMENT_EXT[type]}`;
+  }
+  async function uploadAttachment(memberId, file) {
+    const path = storagePath(memberId, file.type);
+    const {error} = await db().storage.from(ATTACHMENT_BUCKET).upload(path, file, {contentType: file.type, upsert: false, cacheControl: '0'});
+    if (error) throw Error(`Não foi possível enviar o atestado "${file.name}": ${error.message}`);
+    return {path, type: file.type, name: file.name.slice(0, 200), size: file.size, uploadedAt: new Date().toISOString()};
+  }
+  async function removeFiles(paths) {
+    const list = [...new Set(paths.filter(Boolean))];
+    if (!list.length) return;
+    const {error} = await db().storage.from(ATTACHMENT_BUCKET).remove(list);
+    if (error) console.warn('Atestados não removidos do Storage:', list, error.message);
+  }
+  async function viewAttachment(attachment) {
+    // Abre a aba antes da chamada assíncrona para não ser bloqueada como pop-up.
+    const tab = window.open('', '_blank');
+    try {
+      const {data, error} = await db().storage.from(ATTACHMENT_BUCKET).createSignedUrl(attachment.path, 60);
+      if (error) throw error;
+      if (tab) { tab.opener = null; tab.location.href = data.signedUrl; } else window.location.assign(data.signedUrl);
+    } catch (err) {
+      tab?.close();
+      toast(`Não foi possível abrir o atestado: ${err.message || 'erro desconhecido'}`, true);
+    }
   }
   function askDelete(id) {
     const record = database.rehearsals.find((r) => r.id === id);
@@ -339,10 +399,10 @@
   }
   function exportCsv() {
     if (!database) return;
-    const headers = ['Data', 'Horário', 'Local', 'Integrante', 'Situação', 'Motivo', 'Observações'];
+    const headers = ['Data', 'Horário', 'Local', 'Integrante', 'Situação', 'Motivo', 'Atestado', 'Observações'];
     const names = Object.fromEntries(database.members.map((m) => [m.id, m.name]));
     const rows = [headers];
-    sortedRehearsals().forEach((r) => Object.entries(r.attendance).forEach(([id, a]) => rows.push([dateText(r.date), r.time, r.location, names[id] || 'Integrante anterior', statuses[a.status]?.label || 'Pendente', a.reason, r.notes])));
+    sortedRehearsals().forEach((r) => Object.entries(r.attendance).forEach(([id, a]) => rows.push([dateText(r.date), r.time, r.location, names[id] || 'Integrante anterior', statuses[a.status]?.label || 'Pendente', a.reason, a.attachment ? `Sim (${a.attachment.name})` : '', r.notes])));
     const text = '\ufeff' + rows.map((row) => row.map(csvSafe).join(';')).join('\r\n');
     downloadText(text, 'frequencia-ensaios.csv', 'text/csv');
     toast('Relatório CSV exportado.');
@@ -364,7 +424,7 @@
         if (file.size > 2_000_000) throw Error('O arquivo não pode exceder 2 MB.');
         const next = JSON.parse(await file.text());
         if (!Array.isArray(next.members) || !Array.isArray(next.rehearsals) || !next.members.every(m => typeof m.id === 'string' && typeof m.name === 'string') || !next.rehearsals.every(r => r.attendance && typeof r.date === 'string' && typeof r.time === 'string' && typeof r.location === 'string')) throw Error('Formato de backup incompatível.');
-        const allowed = new Set(['presente','parcial','justificada','falta','pendente']);
+        const allowed = new Set(['presente','parcial','justificada','abonada','falta','pendente']);
         if (!next.rehearsals.every(r => Object.values(r.attendance).every(a => a && allowed.has(a.status)))) throw Error('O backup contém situações inválidas.');
         next.audit = Array.isArray(next.audit) ? next.audit : [];
         next.audit.push({at:new Date().toISOString(),event:'Importação manual de backup JSON'});
@@ -376,18 +436,70 @@
     $id('rehearsalSearch').addEventListener('input', (e) => dataTable?.search(e.target.value).draw());
     $id('rehearsalFilter').addEventListener('change', (e) => dataTable?.column(6).search(e.target.value === 'todos' ? '' : e.target.value).draw());
     $id('attendanceFields').addEventListener('change', (e) => {
-      if (!e.target.matches('.attendance-status')) return;
-      const reason = e.target.closest('.attendance-row').querySelector('.attendance-reason');
-      reason.disabled = e.target.value === 'presente' || e.target.value === 'pendente';
-      if (reason.disabled) reason.value = '';
+      const row = e.target.closest('.attendance-row');
+      if (!row) return;
+      if (e.target.matches('.attendance-status')) {
+        const reason = row.querySelector('.attendance-reason-input');
+        reason.disabled = e.target.value === 'presente' || e.target.value === 'pendente';
+        if (reason.disabled) reason.value = '';
+        row.querySelector('.attendance-attachment').hidden = e.target.value !== 'abonada';
+        return;
+      }
+      if (e.target.matches('.attendance-file')) {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        if (!ATTACHMENT_EXT[file.type]) { toast('Formato não aceito. Envie o atestado em JPG, PNG, WEBP ou PDF.', true); return; }
+        if (file.size > ATTACHMENT_MAX) { toast(`O atestado tem ${fileSize(file.size)}; o máximo é 5 MB.`, true); return; }
+        attachmentDrafts.get(row.dataset.memberId).file = file;
+        refreshAttachment(row);
+      }
+    });
+    $id('attendanceFields').addEventListener('click', (e) => {
+      const button = e.target.closest('[data-action]');
+      const row = e.target.closest('.attendance-row');
+      if (!button || !row) return;
+      const draft = attachmentDrafts.get(row.dataset.memberId);
+      if (button.dataset.action === 'view-attachment' && draft.current) { viewAttachment(draft.current); return; }
+      if (button.dataset.action === 'remove-attachment') draft.remove = true;
+      if (button.dataset.action === 'undo-remove-attachment') draft.remove = false;
+      if (button.dataset.action === 'discard-attachment') draft.file = null;
+      refreshAttachment(row);
     });
     $id('rehearsalForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!database || isBusy) return;
+      const submit = $id('saveRehearsalButton');
+      const rows = [...$id('attendanceFields').querySelectorAll('.attendance-row')];
       const attendance = {};
-      $id('attendanceFields').querySelectorAll('.attendance-row').forEach((row) => {
-        attendance[row.dataset.memberId] = {status: row.querySelector('.attendance-status').value, reason: row.querySelector('.attendance-reason').value.trim()};
-      });
+      const uploaded = [];   // enviados agora: apagados se a gravação falhar
+      const obsolete = [];   // substituídos/removidos: apagados depois de gravar
+      submit.disabled = true;
+      try {
+        for (const row of rows) {
+          const memberId = row.dataset.memberId;
+          const status = row.querySelector('.attendance-status').value;
+          const draft = attachmentDrafts.get(memberId) || {current: null, file: null, remove: false};
+          const entry = {status, reason: row.querySelector('.attendance-reason-input').value.trim()};
+          let keep = draft.remove ? null : draft.current;
+          if (status === 'abonada' && draft.file) {
+            saving('Enviando atestado...', 'saving');
+            const sent = await uploadAttachment(memberId, draft.file);
+            uploaded.push(sent.path);
+            keep = sent;
+          }
+          if (status !== 'abonada') keep = null;
+          if (draft.current && draft.current.path !== keep?.path) obsolete.push(draft.current.path);
+          if (keep) entry.attachment = keep;
+          attendance[memberId] = entry;
+        }
+      } catch (err) {
+        await removeFiles(uploaded);
+        saving('Não foi possível salvar', 'error');
+        toast(err.message || 'Falha ao enviar o atestado.', true);
+        submit.disabled = false;
+        return;
+      }
       const success = await save('rehearsal.save', {
         id: editingRehearsal,
         date: $id('rehearsalDate').value,
@@ -396,7 +508,9 @@
         notes: $id('rehearsalNotes').value.trim(),
         attendance
       });
-      if (success) modal('rehearsalModal').hide();
+      submit.disabled = false;
+      if (success) { await removeFiles(obsolete); modal('rehearsalModal').hide(); }
+      else await removeFiles(uploaded);
     });
     $id('rehearsalsTable').addEventListener('click', (e) => {
       const button = e.target.closest('[data-action]');
@@ -407,7 +521,8 @@
     $id('deleteRehearsalButton').addEventListener('click', () => { if (editingRehearsal) askDelete(editingRehearsal); });
     $id('confirmDeleteButton').addEventListener('click', async () => {
       if (!pendingDelete) return;
-      if (await save('rehearsal.delete', {id: pendingDelete})) { pendingDelete = null; modal('confirmModal').hide(); }
+      const files = Object.values(database.rehearsals.find((r) => r.id === pendingDelete)?.attendance || {}).map((a) => a.attachment?.path);
+      if (await save('rehearsal.delete', {id: pendingDelete})) { pendingDelete = null; modal('confirmModal').hide(); await removeFiles(files); }
     });
     $id('addMemberForm').addEventListener('submit', async (e) => {
       e.preventDefault();

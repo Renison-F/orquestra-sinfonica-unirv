@@ -1,7 +1,15 @@
 /* Regras de alteração preservadas na versão estática. O PostgreSQL é a fonte da verdade. */
 (() => {
   'use strict';
-  const valid = new Set(['presente', 'parcial', 'justificada', 'falta', 'pendente']);
+  const valid = new Set(['presente', 'parcial', 'justificada', 'abonada', 'falta', 'pendente']);
+  /* Atestado da falta abonada: aqui ficam só os metadados; o arquivo vai para o bucket privado 'atestados'. */
+  const ATTACHMENT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
+  const ATTACHMENT_PATH = /^[A-Za-z0-9_-]{1,80}\/[0-9a-f-]{36}\.(pdf|jpg|png|webp)$/;
+  function attachmentOf(value) {
+    if (value == null) return null;
+    if (typeof value !== 'object' || !ATTACHMENT_PATH.test(value.path || '') || !ATTACHMENT_TYPES.has(value.type)) throw Error('Atestado anexado em formato inválido.');
+    return {path: value.path, type: value.type, name: String(value.name || 'atestado').slice(0, 200), size: Number(value.size) || 0, uploadedAt: String(value.uploadedAt || '')};
+  }
   const clone = value => JSON.parse(JSON.stringify(value));
   const must = (value, label, max = 160) => {
     if (typeof value !== 'string' || !value.trim() || [...value.trim()].length > max) throw Error(`${label}: informe um texto de até ${max} caracteres.`);
@@ -33,7 +41,8 @@
       for (const id of expected) {
         const a = payload.attendance[id];
         if (!a || !valid.has(a.status)) throw Error('Situação de frequência inválida.');
-        attendance[id] = {status:a.status, reason:['falta','justificada','parcial'].includes(a.status) ? optional(a.reason ?? '', 'Justificativa', 220) : ''};
+        attendance[id] = {status:a.status, reason:['falta','justificada','abonada','parcial'].includes(a.status) ? optional(a.reason ?? '', 'Justificativa', 220) : ''};
+        if (a.status === 'abonada') { const file = attachmentOf(a.attachment); if (file) attendance[id].attachment = file; }
       }
       const record = {id: old?.id || `ensaio-${crypto.randomUUID()}`, date, time, location, notes, attendance};
       if (old) Object.assign(old, record); else rehearsals.push(record);
@@ -67,7 +76,7 @@
     const lines = ['# Frequência — Orquestra Sinfônica da Universidade de Rio Verde (UniRV)', '', `**Revisão:** ${state.revision}`, `**Atualizado em:** ${state.updatedAt || '—'}`, '', '## Histórico de ensaios', ''];
     [...state.rehearsals].sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time)).forEach(r => {
       lines.push(`### ${r.date} às ${r.time}`, `**Local:** ${r.location.replace(/[\r\n]/g,' ')}`, r.notes ? `**Observações:** ${r.notes.replace(/[\r\n]/g,' ')}` : '', '', '| Integrante | Situação | Justificativa |', '|---|---|---|');
-      Object.entries(r.attendance).forEach(([id,a]) => lines.push(`| ${(names[id]||id).replace(/\|/g,'\\|')} | ${a.status} | ${(a.reason||'').replace(/[\r\n]/g,' ').replace(/\|/g,'\\|')} |`));
+      Object.entries(r.attendance).forEach(([id,a]) => lines.push(`| ${(names[id]||id).replace(/\|/g,'\\|')} | ${a.status} | ${(a.reason||'').replace(/[\r\n]/g,' ').replace(/\|/g,'\\|')}${a.attachment ? ' (atestado anexado)' : ''} |`));
       lines.push('');
     });
     return lines.join('\n');
